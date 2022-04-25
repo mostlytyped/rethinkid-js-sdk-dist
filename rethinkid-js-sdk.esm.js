@@ -107,12 +107,12 @@ function pkceChallengeFromVerifier(codeVerifier) {
     });
 }
 
-// Config
-const signUpBaseUri = "http://localhost:3000/sign-up";
-const tokenUri = "http://localhost:4444/oauth2/token";
-const authUri = "http://localhost:4444/oauth2/auth";
-const socketioUri = "http://localhost:4000";
 // Private vars set in the constructor
+let rethinkIdBaseUri = "";
+let signUpBaseUri = "";
+let tokenUri = "";
+let authUri = "";
+let socketioUri = "";
 /**
  * The URI to redirect to after a successful sign up
  */
@@ -211,6 +211,11 @@ class RethinkID {
             });
         });
         signUpRedirectUri = options.signUpRedirectUri;
+        rethinkIdBaseUri = options.rethinkIdBaseUri;
+        signUpBaseUri = `${rethinkIdBaseUri}/sign-up`;
+        tokenUri = `${rethinkIdBaseUri}/oauth2/token`;
+        authUri = `${rethinkIdBaseUri}/oauth2/auth`;
+        socketioUri = rethinkIdBaseUri;
         /**
          * Namespace local storage key names
          */
