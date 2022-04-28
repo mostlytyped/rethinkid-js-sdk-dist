@@ -86,8 +86,13 @@ function generateRandomString() {
  * @param input A random string
  */
 function sha256(input) {
+    console.log("sha256:");
     const encoder = new TextEncoder();
+    console.log("- encoder", encoder);
     const data = encoder.encode(input);
+    console.log("- data", data);
+    console.log("- window.crypto", window.crypto);
+    console.log("- window.crypto.subtle", window.crypto.subtle);
     return window.crypto.subtle.digest("SHA-256", data);
 }
 /**
@@ -110,7 +115,9 @@ function base64UrlEncode(arrayBuffer) {
  */
 function pkceChallengeFromVerifier(codeVerifier) {
     return __awaiter(this, void 0, void 0, function* () {
+        console.log("pkceChallengeFromVerifier:");
         const hashed = yield sha256(codeVerifier);
+        console.log("- hashed", hashed);
         return base64UrlEncode(hashed);
     });
 }
@@ -291,14 +298,18 @@ class RethinkID {
      */
     _logInUri() {
         return __awaiter(this, void 0, void 0, function* () {
+            console.log("_logInUri");
             // Create and store a random "state" value
             const state = generateRandomString();
             localStorage.setItem(pkceStateKeyName, state);
+            console.log("- state", state);
             // Create and store a new PKCE code_verifier (the plaintext random secret)
             const codeVerifier = generateRandomString();
             localStorage.setItem(pkceCodeVerifierKeyName, codeVerifier);
+            console.log("- codeVerifier", codeVerifier);
             // Hash and base64-urlencode the secret to use as the challenge
             const codeChallenge = yield pkceChallengeFromVerifier(codeVerifier);
+            console.log("- codeChallenge", codeChallenge);
             return oAuthClient.code.getUri({
                 state: state,
                 query: {
