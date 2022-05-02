@@ -222,7 +222,7 @@ class RethinkID {
             });
         });
         signUpRedirectUri = options.signUpRedirectUri;
-        rethinkIdBaseUri = options.rethinkIdBaseUri;
+        rethinkIdBaseUri = options.rethinkIdBaseUri || "https://id.rethinkdb.cloud";
         signUpBaseUri = `${rethinkIdBaseUri}/sign-up`;
         tokenUri = `${rethinkIdBaseUri}/oauth2/token`;
         authUri = `${rethinkIdBaseUri}/oauth2/auth`;
