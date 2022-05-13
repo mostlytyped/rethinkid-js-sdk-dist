@@ -11,9 +11,6 @@ import { Options, Permission, SubscribeListener } from "./types";
  *   appId: "3343f20f-dd9c-482c-9f6f-8f6e6074bb81",
  *   signUpRedirectUri: "https://example.com/sign-in",
  *   logInRedirectUri: "https://example.com/callback",
- *   onLogInComplete: () => {
- *     // do something when the user logs in
- *   },
  * };
  *
  * export const rid = new RethinkID(config);
@@ -26,41 +23,25 @@ export default class RethinkID {
      */
     private _socketConnect;
     /**
-     * Generate a URI to sign up a user, creating a RethinkID account
-     */
-    signUpUri(): string;
-    /**
      * Generate a URI to log in a user to RethinkID and authorize an app.
      * Uses the Authorization Code Flow for single page apps with PKCE code verification.
      * Requests an authorization code.
      *
-     * Used by the {@link openLogInWindow} method as the URI to open.
-     *
      * Use {@link completeLogIn} to exchange the authorization code for an access token and ID token
-     * at the `logInRedirectUri` URI specified when creating a RethinkID instance.
+     * at the {@link Options.logInRedirectUri} URI specified when creating a RethinkID instance.
      */
-    private _logInUri;
+    logInUri(): Promise<string>;
     /**
-     * Opens a pop-up window to perform OAuth log in.
-     * e.g. attach to "Log in" button click.
-     */
-    openLogInWindow(): Promise<void>;
-    /**
-     * Completes the log in flow, sends a message to the opener window, and
-     * closes the pop-up window.
-     * Runs in the log in pop-up window at the login redirect URI, options.logInRedirectUri.
+     * Completes the log in flow.
+     * Gets the access and ID tokens, establishes an API connection.
+     *
+     * Must be called at the {@link Options.logInRedirectUri} URI.
      */
     completeLogIn(): Promise<void>;
     /**
-     * A "message" event listener for the log in pop-up window.
-     * Handles messages sent from the log in pop-up window to its opener window.
-     * @param event A postMessage event object
-     */
-    private _receiveLogInWindowMessage;
-    /**
      * Takes an authorization code and exchanges it for an access token and ID token.
      * Used in {@link completeLogIn}.
-     * An authorization code is received as a URL param after a successfully calling {@link openLogInWindow}
+     * An authorization code is received as a URL param after a successfully calling {@link logInUri}
      * and approving the log in request.
      *
      * Expects `code` and `state` query params to be present in the URL. Or else an `error` query
