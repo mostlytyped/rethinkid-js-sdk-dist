@@ -4,7 +4,6 @@
 export declare type Options = {
     rethinkIdBaseUri?: string;
     appId: string;
-    signUpRedirectUri: string;
     /**
      * The URI the auth server redirects to with an auth code, after successful approving a log in request.
      */

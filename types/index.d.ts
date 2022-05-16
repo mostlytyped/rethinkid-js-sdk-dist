@@ -5,11 +5,10 @@ import { Options, Permission, SubscribeListener } from "./types";
  *
  * @example
  * ```
- * import { RethinkID } from "@mostlytyped/rethinkid-js-sdk";
+ * import RethinkID from "@mostlytyped/rethinkid-js-sdk";
  *
  * const config = {
  *   appId: "3343f20f-dd9c-482c-9f6f-8f6e6074bb81",
- *   signUpRedirectUri: "https://example.com/sign-in",
  *   logInRedirectUri: "https://example.com/callback",
  * };
  *
