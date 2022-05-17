@@ -190,5 +190,5 @@ export default class RethinkID {
     }>;
     table(tableName: string, tableOptions: {
         userId?: string;
-    }): Promise<Table>;
+    }): Table;
 }

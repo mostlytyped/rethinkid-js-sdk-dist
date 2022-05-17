@@ -519,9 +519,7 @@ class RethinkID {
         });
     }
     table(tableName, tableOptions) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return new Table(this, tableName, tableOptions);
-        });
+        return new Table(this, tableName, tableOptions);
     }
 }
 
