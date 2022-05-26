@@ -4469,12 +4469,7 @@ var RethinkID = (function () {
          */
         completeLogIn() {
             return __awaiter(this, void 0, void 0, function* () {
-                try {
-                    yield this._getAndSetTokens();
-                }
-                catch (e) {
-                    console.log("complete login error", e.message);
-                }
+                yield this._getAndSetTokens();
                 // Make a socket connection now that we have an access token
                 this._socketConnect();
             });
