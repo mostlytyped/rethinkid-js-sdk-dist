@@ -9,7 +9,7 @@ import { Options, Permission, SubscribeListener } from "./types";
  *
  * const config = {
  *   appId: "3343f20f-dd9c-482c-9f6f-8f6e6074bb81",
- *   logInRedirectUri: "https://example.com/callback",
+ *   loginRedirectUri: "https://example.com/callback",
  * };
  *
  * export const rid = new RethinkID(config);
@@ -26,22 +26,22 @@ export default class RethinkID {
      * Uses the Authorization Code Flow for single page apps with PKCE code verification.
      * Requests an authorization code.
      *
-     * Use {@link completeLogIn} to exchange the authorization code for an access token and ID token
-     * at the {@link Options.logInRedirectUri} URI specified when creating a RethinkID instance.
+     * Use {@link completeLogin} to exchange the authorization code for an access token and ID token
+     * at the {@link Options.loginRedirectUri} URI specified when creating a RethinkID instance.
      */
-    logInUri(): Promise<string>;
+    loginUri(): Promise<string>;
     /**
-     * Completes the log in flow.
+     * Completes the login flow.
      * Gets the access and ID tokens, establishes an API connection.
      *
-     * Must be called at the {@link Options.logInRedirectUri} URI.
+     * Must be called at the {@link Options.loginRedirectUri} URI.
      */
-    completeLogIn(): Promise<void>;
+    completeLogin(): Promise<void>;
     /**
      * Takes an authorization code and exchanges it for an access token and ID token.
-     * Used in {@link completeLogIn}.
-     * An authorization code is received as a URL param after a successfully calling {@link logInUri}
-     * and approving the log in request.
+     * Used in {@link completeLogin}.
+     * An authorization code is received as a URL param after a successfully calling {@link loginUri}
+     * and approving the login request.
      *
      * Expects `code` and `state` query params to be present in the URL. Or else an `error` query
      * param if something went wrong.

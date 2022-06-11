@@ -4335,7 +4335,7 @@ var RethinkID = (function () {
      *
      * const config = {
      *   appId: "3343f20f-dd9c-482c-9f6f-8f6e6074bb81",
-     *   logInRedirectUri: "https://example.com/callback",
+     *   loginRedirectUri: "https://example.com/callback",
      * };
      *
      * export const rid = new RethinkID(config);
@@ -4400,7 +4400,7 @@ var RethinkID = (function () {
             pkceCodeVerifierKeyName = `${namespace}_pkce_code_verifier`;
             oAuthClient = new clientOauth2({
                 clientId: options.appId,
-                redirectUri: options.logInRedirectUri,
+                redirectUri: options.loginRedirectUri,
                 accessTokenUri: tokenUri,
                 authorizationUri: authUri,
                 scopes: ["openid", "profile", "email"],
@@ -4439,10 +4439,10 @@ var RethinkID = (function () {
          * Uses the Authorization Code Flow for single page apps with PKCE code verification.
          * Requests an authorization code.
          *
-         * Use {@link completeLogIn} to exchange the authorization code for an access token and ID token
-         * at the {@link Options.logInRedirectUri} URI specified when creating a RethinkID instance.
+         * Use {@link completeLogin} to exchange the authorization code for an access token and ID token
+         * at the {@link Options.loginRedirectUri} URI specified when creating a RethinkID instance.
          */
-        logInUri() {
+        loginUri() {
             return __awaiter(this, void 0, void 0, function* () {
                 // Create and store a random "state" value
                 const state = generateRandomString();
@@ -4462,12 +4462,12 @@ var RethinkID = (function () {
             });
         }
         /**
-         * Completes the log in flow.
+         * Completes the login flow.
          * Gets the access and ID tokens, establishes an API connection.
          *
-         * Must be called at the {@link Options.logInRedirectUri} URI.
+         * Must be called at the {@link Options.loginRedirectUri} URI.
          */
-        completeLogIn() {
+        completeLogin() {
             return __awaiter(this, void 0, void 0, function* () {
                 yield this._getAndSetTokens();
                 // Make a socket connection now that we have an access token
@@ -4476,9 +4476,9 @@ var RethinkID = (function () {
         }
         /**
          * Takes an authorization code and exchanges it for an access token and ID token.
-         * Used in {@link completeLogIn}.
-         * An authorization code is received as a URL param after a successfully calling {@link logInUri}
-         * and approving the log in request.
+         * Used in {@link completeLogin}.
+         * An authorization code is received as a URL param after a successfully calling {@link loginUri}
+         * and approving the login request.
          *
          * Expects `code` and `state` query params to be present in the URL. Or else an `error` query
          * param if something went wrong.
