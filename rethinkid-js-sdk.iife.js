@@ -4335,7 +4335,7 @@ var RethinkID = (function () {
      *
      * const config = {
      *   appId: "3343f20f-dd9c-482c-9f6f-8f6e6074bb81",
-     *   loginRedirectUri: "https://example.com/callback",
+     *   loginRedirectUri: "https://example.com/complete-login",
      * };
      *
      * export const rid = new RethinkID(config);
@@ -4444,6 +4444,10 @@ var RethinkID = (function () {
          */
         loginUri() {
             return __awaiter(this, void 0, void 0, function* () {
+                // if logging in, do not overwrite existing PKCE local storage values.
+                if (this.isLoggingIn()) {
+                    return "";
+                }
                 // Create and store a random "state" value
                 const state = generateRandomString();
                 localStorage.setItem(pkceStateKeyName, state);
@@ -4546,6 +4550,20 @@ var RethinkID = (function () {
                 }
             }
             return false;
+        }
+        /**
+         * A utility function to check if a redirect to complete a login request has been performed.
+         * Useful if a login redirect URI is not used solely to complete login, e.g. an app's
+         * home page, to check when {@link completeLogin} needs to be called.
+         *
+         * Also used in {@link loginUri} to make sure PKCE local storage values are not overwritten,
+         * which would otherwise accidentally invalidate a login request.
+         */
+        isLoggingIn() {
+            const params = new URLSearchParams(location.search);
+            // These query params will be present when redirected
+            // back from the RethinkID auth server
+            return !!(params.get("code") && params.get("scope") && params.get("state"));
         }
         /**
          * A utility function to log a user out.

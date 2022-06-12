@@ -9,7 +9,7 @@ import { Options, Permission, SubscribeListener } from "./types";
  *
  * const config = {
  *   appId: "3343f20f-dd9c-482c-9f6f-8f6e6074bb81",
- *   loginRedirectUri: "https://example.com/callback",
+ *   loginRedirectUri: "https://example.com/complete-login",
  * };
  *
  * export const rid = new RethinkID(config);
@@ -54,6 +54,15 @@ export default class RethinkID {
      * i.e. if an access token and ID token are in local storage.
      */
     isLoggedIn(): boolean;
+    /**
+     * A utility function to check if a redirect to complete a login request has been performed.
+     * Useful if a login redirect URI is not used solely to complete login, e.g. an app's
+     * home page, to check when {@link completeLogin} needs to be called.
+     *
+     * Also used in {@link loginUri} to make sure PKCE local storage values are not overwritten,
+     * which would otherwise accidentally invalidate a login request.
+     */
+    isLoggingIn(): boolean;
     /**
      * A utility function to log a user out.
      * Deletes the access token and ID token from local storage and reloads the page.
