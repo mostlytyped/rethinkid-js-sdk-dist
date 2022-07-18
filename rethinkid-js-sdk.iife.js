@@ -4237,6 +4237,9 @@ var RethinkID = (function () {
                 return this.rid.tableRead(this.tableName, Object.assign(Object.assign({}, this.tableOptions), methodOptions));
             });
         }
+        /**
+         * @returns An unsubscribe function
+         */
         subscribe(methodOptions = {}, listener) {
             return __awaiter(this, void 0, void 0, function* () {
                 return this.rid.tableSubscribe(this.tableName, Object.assign(Object.assign({}, this.tableOptions), methodOptions), listener);
@@ -4599,7 +4602,7 @@ var RethinkID = (function () {
             return null;
         }
         /**
-         * Creates a table
+         * Create a table. Private endpoint.
          */
         tablesCreate(tableName) {
             return __awaiter(this, void 0, void 0, function* () {
@@ -4607,7 +4610,7 @@ var RethinkID = (function () {
             });
         }
         /**
-         * Drops, or deletes, a table
+         * Drop a table. Private endpoint.
          */
         tablesDrop(tableName) {
             return __awaiter(this, void 0, void 0, function* () {
@@ -4615,7 +4618,8 @@ var RethinkID = (function () {
             });
         }
         /**
-         * Lists all table names
+         * List all table names. Private endpoint.
+         * @returns Where `data` is an array of table names
          */
         tablesList() {
             return __awaiter(this, void 0, void 0, function* () {
@@ -4623,8 +4627,8 @@ var RethinkID = (function () {
             });
         }
         /**
-         * Gets permissions for a user.
-         * @param options An optional object for specifying which permissions to get.
+         * Get permissions for a table. Private endpoint.
+         * @param options If no optional params are set, all permissions for the user are returned.
          * @returns All permissions are returned if no options are passed.
          */
         permissionsGet(options = {}) {
@@ -4633,7 +4637,7 @@ var RethinkID = (function () {
             });
         }
         /**
-         * Sets permissions for a user
+         * Set (insert/update) permissions for a table. Private endpoint.
          */
         permissionsSet(permissions) {
             return __awaiter(this, void 0, void 0, function* () {
@@ -4641,7 +4645,7 @@ var RethinkID = (function () {
             });
         }
         /**
-         * Deletes permissions for a user.
+         * Delete permissions for a table. Private endpoint.
          * @param options An optional object for specifying a permission ID to delete. All permissions are deleted if no permission ID option is passed.
          */
         permissionsDelete(options = {}) {
@@ -4650,7 +4654,7 @@ var RethinkID = (function () {
             });
         }
         /**
-         * Get data from a table.
+         * Read all table rows, or a single row if row ID passed. Private by default, or public with read permission.
          * @param options An optional object for specifying a row ID and/or user ID.
          * @returns Specify a row ID to get a specific row, otherwise all rows are returned. Specify a user ID to operate on a table owned by that user ID. Otherwise operates on a table owned by the authenticated user.
          */
@@ -4662,15 +4666,16 @@ var RethinkID = (function () {
             });
         }
         /**
-         * Subscribe to table changes.
+         * Subscribe to table changes. Private by default, or public with read permission.
          * @param tableName
          * @param options An object for specifying a user ID. Specify a user ID to operate on a table owned by that user ID. Otherwise passing `{}` operates on a table owned by the authenticated user.
+         * @returns An unsubscribe function
          */
         tableSubscribe(tableName, options, listener) {
             return __awaiter(this, void 0, void 0, function* () {
                 const payload = { tableName };
                 Object.assign(payload, options);
-                const response = (yield this._asyncEmit("table:subscribe", payload)); // data: subscription handle
+                const response = (yield this._asyncEmit("table:subscribe", payload)); // where data is the subscription handle
                 const subscriptionHandle = response.data;
                 socket.on(subscriptionHandle, listener);
                 return () => __awaiter(this, void 0, void 0, function* () {
@@ -4680,10 +4685,11 @@ var RethinkID = (function () {
             });
         }
         /**
-         * Inserts a row into a table
+         * Insert a table row, lazily creates the table if it does not exist. Private by default, or public with insert permission
          * @param tableName The name of the table to operate on.
          * @param row The row to insert.
          * @param options An optional object for specifying a user ID. Specify a user ID to operate on a table owned by that user ID. Otherwise operates on a table owned by the authenticated user.
+         * @returns Where `data` is the row ID
          */
         tableInsert(tableName, row, options = {}) {
             return __awaiter(this, void 0, void 0, function* () {
@@ -4693,9 +4699,9 @@ var RethinkID = (function () {
             });
         }
         /**
-         * Updates a row in a table
+         * Update all table rows, or a single row if row ID exists. Private by default, or public with update permission
          * @param tableName The name of the table to operate on.
-         * @param row Must contain a row ID.
+         * @param row Note! If row.id not present, updates all rows
          * @param options An optional object for specifying a user ID. Specify a user ID to operate on a table owned by that user ID. Otherwise operates on a table owned by the authenticated user.
          */
         tableUpdate(tableName, row, options = {}) {
@@ -4706,7 +4712,7 @@ var RethinkID = (function () {
             });
         }
         /**
-         * Replaces a row in a table
+         * Replace a table row. Private by default, or public with insert, update, delete permissions.
          * @param tableName The name of the table to operate on.
          * @param row Must contain a row ID.
          * @param options An optional object for specifying a user ID. Specify a user ID to operate on a table owned by that user ID. Otherwise operates on a table owned by the authenticated user.
@@ -4719,7 +4725,7 @@ var RethinkID = (function () {
             });
         }
         /**
-         * Deletes from a table
+         * Deletes all table rows, or a single row if row ID passed. Private by default, or public with delete permission.
          * @param tableName The name of the table to operate on.
          * @param options An optional object for specifying a row ID and/or user ID. Specify a row ID to delete a specific row, otherwise all rows are deleted. Specify a user ID to operate on a table owned by that user ID. Otherwise operates on a table owned by the authenticated user.
          */

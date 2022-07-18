@@ -15,10 +15,10 @@ export declare type Options = {
     dataAPIConnectErrorCallback?: (errorMessage: string) => void;
 };
 export declare type Permission = {
-    id: string;
+    id?: string;
     tableName: string;
     userId: string;
-    permission: string;
+    type: "read" | "insert" | "update" | "delete";
 };
 export declare type IdTokenDecoded = {
     at_hash: string;
@@ -39,3 +39,7 @@ export declare type SubscribeListener = (changes: {
     new_val: object;
     old_val: object;
 }) => void;
+export declare type MessageOrError = {
+    message?: string;
+    error?: string;
+};

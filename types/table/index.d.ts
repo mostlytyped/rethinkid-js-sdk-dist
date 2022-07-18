@@ -12,23 +12,20 @@ export declare class Table {
     read(methodOptions?: {
         rowId?: string;
     }): Promise<{
-        data: object;
+        data?: object | any[];
+        error?: string;
     }>;
-    subscribe(methodOptions: {}, listener: SubscribeListener): Promise<() => Promise<{
-        message: string;
-    }>>;
+    /**
+     * @returns An unsubscribe function
+     */
+    subscribe(methodOptions: {}, listener: SubscribeListener): Promise<() => Promise<import("../types").MessageOrError>>;
     insert(row: object, methodOptions?: {}): Promise<{
-        message: string;
+        data?: string;
+        error?: string;
     }>;
-    update(row: object, methodOptions?: {}): Promise<{
-        message: string;
-    }>;
-    replace(methodOptions?: {}): Promise<{
-        message: string;
-    }>;
+    update(row: object, methodOptions?: {}): Promise<import("../types").MessageOrError>;
+    replace(methodOptions?: {}): Promise<import("../types").MessageOrError>;
     delete(methodOptions?: {
         rowId?: string;
-    }): Promise<{
-        message: string;
-    }>;
+    }): Promise<import("../types").MessageOrError>;
 }

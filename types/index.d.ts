@@ -1,5 +1,5 @@
 import { Table } from "./table";
-import { Options, Permission, SubscribeListener } from "./types";
+import { Options, Permission, SubscribeListener, MessageOrError } from "./types";
 /**
  * The primary class of the RethinkID JS SDK to help you more easily build web apps with RethinkID.
  *
@@ -88,26 +88,24 @@ export default class RethinkID {
      */
     private _asyncEmit;
     /**
-     * Creates a table
+     * Create a table. Private endpoint.
      */
-    tablesCreate(tableName: string): Promise<{
-        message: string;
-    }>;
+    tablesCreate(tableName: string): Promise<MessageOrError>;
     /**
-     * Drops, or deletes, a table
+     * Drop a table. Private endpoint.
      */
-    tablesDrop(tableName: string): Promise<{
-        message: string;
-    }>;
+    tablesDrop(tableName: string): Promise<MessageOrError>;
     /**
-     * Lists all table names
+     * List all table names. Private endpoint.
+     * @returns Where `data` is an array of table names
      */
     tablesList(): Promise<{
-        data: object;
+        data: string[];
+        error?: string;
     }>;
     /**
-     * Gets permissions for a user.
-     * @param options An optional object for specifying which permissions to get.
+     * Get permissions for a table. Private endpoint.
+     * @param options If no optional params are set, all permissions for the user are returned.
      * @returns All permissions are returned if no options are passed.
      */
     permissionsGet(options?: {
@@ -115,25 +113,22 @@ export default class RethinkID {
         userId?: string;
         type?: "read" | "insert" | "update" | "delete";
     }): Promise<{
-        data: Permission[];
+        data?: Permission[];
+        error?: string;
     }>;
     /**
-     * Sets permissions for a user
+     * Set (insert/update) permissions for a table. Private endpoint.
      */
-    permissionsSet(permissions: Permission[]): Promise<{
-        message: string;
-    }>;
+    permissionsSet(permissions: Permission[]): Promise<MessageOrError>;
     /**
-     * Deletes permissions for a user.
+     * Delete permissions for a table. Private endpoint.
      * @param options An optional object for specifying a permission ID to delete. All permissions are deleted if no permission ID option is passed.
      */
     permissionsDelete(options?: {
         permissionId?: string;
-    }): Promise<{
-        message: string;
-    }>;
+    }): Promise<MessageOrError>;
     /**
-     * Get data from a table.
+     * Read all table rows, or a single row if row ID passed. Private by default, or public with read permission.
      * @param options An optional object for specifying a row ID and/or user ID.
      * @returns Specify a row ID to get a specific row, otherwise all rows are returned. Specify a user ID to operate on a table owned by that user ID. Otherwise operates on a table owned by the authenticated user.
      */
@@ -141,62 +136,58 @@ export default class RethinkID {
         rowId?: string;
         userId?: string;
     }): Promise<{
-        data: object;
+        data?: any[] | object;
+        error?: string;
     }>;
     /**
-     * Subscribe to table changes.
+     * Subscribe to table changes. Private by default, or public with read permission.
      * @param tableName
      * @param options An object for specifying a user ID. Specify a user ID to operate on a table owned by that user ID. Otherwise passing `{}` operates on a table owned by the authenticated user.
+     * @returns An unsubscribe function
      */
     tableSubscribe(tableName: string, options: {
         userId?: string;
-    }, listener: SubscribeListener): Promise<() => Promise<{
-        message: string;
-    }>>;
+    }, listener: SubscribeListener): Promise<() => Promise<MessageOrError>>;
     /**
-     * Inserts a row into a table
+     * Insert a table row, lazily creates the table if it does not exist. Private by default, or public with insert permission
      * @param tableName The name of the table to operate on.
      * @param row The row to insert.
      * @param options An optional object for specifying a user ID. Specify a user ID to operate on a table owned by that user ID. Otherwise operates on a table owned by the authenticated user.
+     * @returns Where `data` is the row ID
      */
     tableInsert(tableName: string, row: object, options?: {
         userId?: string;
     }): Promise<{
-        message: string;
+        data?: string;
+        error?: string;
     }>;
     /**
-     * Updates a row in a table
+     * Update all table rows, or a single row if row ID exists. Private by default, or public with update permission
      * @param tableName The name of the table to operate on.
-     * @param row Must contain a row ID.
+     * @param row Note! If row.id not present, updates all rows
      * @param options An optional object for specifying a user ID. Specify a user ID to operate on a table owned by that user ID. Otherwise operates on a table owned by the authenticated user.
      */
     tableUpdate(tableName: string, row: object, options?: {
         userId?: string;
-    }): Promise<{
-        message: string;
-    }>;
+    }): Promise<MessageOrError>;
     /**
-     * Replaces a row in a table
+     * Replace a table row. Private by default, or public with insert, update, delete permissions.
      * @param tableName The name of the table to operate on.
      * @param row Must contain a row ID.
      * @param options An optional object for specifying a user ID. Specify a user ID to operate on a table owned by that user ID. Otherwise operates on a table owned by the authenticated user.
      */
     tableReplace(tableName: string, row: object, options?: {
         userId?: string;
-    }): Promise<{
-        message: string;
-    }>;
+    }): Promise<MessageOrError>;
     /**
-     * Deletes from a table
+     * Deletes all table rows, or a single row if row ID passed. Private by default, or public with delete permission.
      * @param tableName The name of the table to operate on.
      * @param options An optional object for specifying a row ID and/or user ID. Specify a row ID to delete a specific row, otherwise all rows are deleted. Specify a user ID to operate on a table owned by that user ID. Otherwise operates on a table owned by the authenticated user.
      */
     tableDelete(tableName: string, options?: {
         rowId?: string;
         userId?: string;
-    }): Promise<{
-        message: string;
-    }>;
+    }): Promise<MessageOrError>;
     table(tableName: string, tableOptions: {
         userId?: string;
     }): Table;
