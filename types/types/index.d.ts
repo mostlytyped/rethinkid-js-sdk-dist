@@ -18,8 +18,9 @@ export declare type Permission = {
     id?: string;
     tableName: string;
     userId: string;
-    type: "read" | "insert" | "update" | "delete";
+    type: PermissionType;
 };
+export declare type PermissionType = "read" | "insert" | "update" | "delete";
 export declare type IdTokenDecoded = {
     at_hash: string;
     aud: string[];
