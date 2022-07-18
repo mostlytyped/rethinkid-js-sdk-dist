@@ -31,6 +31,23 @@ export default class RethinkID {
      */
     loginUri(): Promise<string>;
     /**
+     * Opens a pop-up window to perform OAuth login.
+     * @param loginCompleteCallback e.g. set logged in to true in local state
+     */
+    openLoginPopUp(loginCompleteCallback?: () => void): Promise<void>;
+    /**
+     * Completes the pop-up login flow. Sends a message to the opener window, and
+     * closes the pop-up window.
+     * Runs in the log in pop-up window at the login redirect URI, options.logInRedirectUri.
+     */
+    completePopUpLogin(): Promise<void>;
+    /**
+     * A "message" event listener for the login pop-up window.
+     * Handles messages sent from the login pop-up window to its opener window.
+     * @param event A postMessage event object
+     */
+    private _receiveLoginWindowMessage;
+    /**
      * Completes the login flow.
      * Gets the access and ID tokens, establishes an API connection.
      *

@@ -129,7 +129,31 @@ let pkceStateKeyName = "";
 let pkceCodeVerifierKeyName = "";
 let oAuthClient = null;
 let socket = null;
+/**
+ * A callback function an app can specify when opening a pop-up login window.
+ * The callback will run when a user has successfully logged in.
+ *
+ * e.g. Set state, redirect, etc.
+ */
+let onPopUpLoginComplete = null;
+/**
+ * An app's base URL
+ * Used to check against the origin of a postMessage event sent from the log in pop-up window.
+ * e.g. https://example-app.com
+ */
+let baseUrl = "";
 // End constructor vars
+/**
+ * A reference to the window object of the log in pop-up window.
+ * Used in {@link RethinkID.openLogInPopUp}
+ */
+let logInWindowReference = null;
+/**
+ * A reference to the previous URL of the sign up pop-up window.
+ * Used to avoid creating duplicate windows and for focusing an existing window.
+ * Used in {@link RethinkID.openLogInPopUp}
+ */
+let logInWindowPreviousUrl = null;
 /**
  * The primary class of the RethinkID JS SDK to help you more easily build web apps with RethinkID.
  *
@@ -209,6 +233,11 @@ class RethinkID {
             authorizationUri: authUri,
             scopes: ["openid", "profile", "email"],
         });
+        /**
+         * Get the base URL from the log in redirect URI already supplied,
+         * to save a developer from having to add another options property
+         */
+        baseUrl = new URL(options.loginRedirectUri).origin;
         this._socketConnect();
     }
     /**
@@ -268,6 +297,91 @@ class RethinkID {
                 },
             });
         });
+    }
+    /**
+     * Opens a pop-up window to perform OAuth login.
+     * @param loginCompleteCallback e.g. set logged in to true in local state
+     */
+    openLoginPopUp(loginCompleteCallback) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const url = yield this.loginUri();
+            const name = "rethinkid-login-window";
+            onPopUpLoginComplete = loginCompleteCallback;
+            // remove any existing event listeners
+            window.removeEventListener("message", this._receiveLoginWindowMessage);
+            // window features
+            const strWindowFeatures = "toolbar=no, menubar=no, width=600, height=700, top=100, left=100";
+            if (logInWindowReference === null || logInWindowReference.closed) {
+                /**
+                 * if the pointer to the window object in memory does not exist or if such pointer exists but the window was closed
+                 * */
+                logInWindowReference = window.open(url, name, strWindowFeatures);
+            }
+            else if (logInWindowPreviousUrl !== url) {
+                /**
+                 * if the resource to load is different, then we load it in the already opened secondary
+                 * window and then we bring such window back on top/in front of its parent window.
+                 */
+                logInWindowReference = window.open(url, name, strWindowFeatures);
+                logInWindowReference.focus();
+            }
+            else {
+                /**
+                 * else the window reference must exist and the window is not closed; therefore,
+                 * we can bring it back on top of any other window with the focus() method.
+                 * There would be no need to re-create the window or to reload the referenced resource.
+                 */
+                logInWindowReference.focus();
+            }
+            // add the listener for receiving a message from the pop-up
+            window.addEventListener("message", (event) => this._receiveLoginWindowMessage(event), false);
+            // assign the previous URL
+            logInWindowPreviousUrl = url;
+        });
+    }
+    /**
+     * Completes the pop-up login flow. Sends a message to the opener window, and
+     * closes the pop-up window.
+     * Runs in the log in pop-up window at the login redirect URI, options.logInRedirectUri.
+     */
+    completePopUpLogin() {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (window.opener) {
+                try {
+                    yield this._getAndSetTokens();
+                }
+                catch (e) {
+                    console.log("Complete pop-up login error", e.message);
+                }
+                // Specify `baseUrl` targetOrigin for security
+                window.opener.postMessage("Login complete", baseUrl);
+                // close the pop-up
+                window.close();
+            }
+        });
+    }
+    /**
+     * A "message" event listener for the login pop-up window.
+     * Handles messages sent from the login pop-up window to its opener window.
+     * @param event A postMessage event object
+     */
+    _receiveLoginWindowMessage(event) {
+        // Make sure to check origin and source to mitigate XSS attacks
+        // Do we trust the sender of this message? (might be
+        // different from what we originally opened, for example).
+        if (event.origin !== baseUrl) {
+            return;
+        }
+        // if we trust the sender and the source is our pop-up
+        if (event.source === logInWindowReference) {
+            // Make a socket connection now that we have an access token and are back in the main window
+            this._socketConnect();
+            // Run the user defined post login callback
+            // Set `this` context so the RethinkID instance can be accessed a in the callback
+            // e.g. calling `this.logOut()` might be useful.
+            onPopUpLoginComplete.call(this);
+            // Have different URL for pop-ups. When that's used, set callback somewhere.
+        }
     }
     /**
      * Completes the login flow.
