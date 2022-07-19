@@ -4311,6 +4311,20 @@ var RethinkID = (function () {
             return base64UrlEncode(hashed);
         });
     }
+    /**
+     * Open and center pop-up on specific window to account for multiple monitors
+     * @param url url to open
+     * @param windowName name to identify pop-up window
+     * @param win the parent/opener window
+     * @param w width
+     * @param h height
+     * @returns `Window` if successful, `null` if blocked by a built-in browser pop-up blocker. Otherwise fails silently I think...
+     */
+    function popUpWindow(url, windowName, win, w, h) {
+        const y = win.top.outerHeight / 2 + win.top.screenY - h / 2;
+        const x = win.top.outerWidth / 2 + win.top.screenX - w / 2;
+        return win.open(url, windowName, `popup=yes, width=${w}, height=${h}, top=${y}, left=${x}`);
+    }
 
     let tokenUri = "";
     let authUri = "";
@@ -4504,25 +4518,33 @@ var RethinkID = (function () {
         openLoginPopUp(loginCompleteCallback) {
             return __awaiter(this, void 0, void 0, function* () {
                 const url = yield this.loginUri();
-                const name = "rethinkid-login-window";
+                const windowName = "rethinkid-login-window";
                 onPopUpLoginComplete = loginCompleteCallback;
                 // remove any existing event listeners
                 window.removeEventListener("message", this._receiveLoginWindowMessage);
-                // window features
-                const strWindowFeatures = "toolbar=no, menubar=no, width=600, height=700, top=100, left=100";
                 if (logInWindowReference === null || logInWindowReference.closed) {
                     /**
                      * if the pointer to the window object in memory does not exist or if such pointer exists but the window was closed
                      * */
-                    logInWindowReference = window.open(url, name, strWindowFeatures);
+                    logInWindowReference = popUpWindow(url, windowName, window, 500, 608);
+                    // TODO if `null` pop-up blocked probably!
+                    console.log("A. just tried to window.open", logInWindowReference);
+                    if (logInWindowReference === null) {
+                        console.log("A. - null on trying to open window. Blocked by browser likely.");
+                    }
                 }
                 else if (logInWindowPreviousUrl !== url) {
                     /**
                      * if the resource to load is different, then we load it in the already opened secondary
                      * window and then we bring such window back on top/in front of its parent window.
                      */
-                    logInWindowReference = window.open(url, name, strWindowFeatures);
+                    logInWindowReference = popUpWindow(url, windowName, window, 500, 608);
                     logInWindowReference.focus();
+                    // TODO if `null` pop-up blocked probably!
+                    console.log("B. just tried to window.open", logInWindowReference);
+                    if (logInWindowReference === null) {
+                        console.log("B. - null on trying to open window. Blocked by browser likely.");
+                    }
                 }
                 else {
                     /**
