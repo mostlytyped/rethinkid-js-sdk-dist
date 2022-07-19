@@ -331,7 +331,14 @@ class RethinkID {
                 // TODO if `null` pop-up blocked probably!
                 console.log("A. just tried to window.open", logInWindowReference);
                 if (logInWindowReference === null) {
-                    console.log("A. - null on trying to open window. Blocked by browser likely.");
+                    const m = "A. - null on trying to open window. Blocked by browser likely.";
+                    console.log(m);
+                    window.prompt(m);
+                }
+                else {
+                    const m = "A. - NOT null on trying to open window. Blocked by browser likely.";
+                    console.log(m);
+                    window.prompt(m);
                 }
             }
             else if (logInWindowPreviousUrl !== url) {
@@ -344,7 +351,14 @@ class RethinkID {
                 // TODO if `null` pop-up blocked probably!
                 console.log("B. just tried to window.open", logInWindowReference);
                 if (logInWindowReference === null) {
-                    console.log("B. - null on trying to open window. Blocked by browser likely.");
+                    const m = "B. - null on trying to open window. Blocked by browser likely.";
+                    console.log(m);
+                    window.prompt(m);
+                }
+                else {
+                    const m = "B. - NOT null on trying to open window. Blocked by browser likely.";
+                    console.log(m);
+                    window.prompt(m);
                 }
             }
             else {
