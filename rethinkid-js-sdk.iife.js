@@ -4550,17 +4550,11 @@ var RethinkID = (function () {
                      */
                     logInWindowReference.focus();
                 }
-                // If the pop-up opened successfully (was not blocked), prevent default link behavior (prevent redirect)
-                if (logInWindowReference) {
-                    console.log("prevent link click, did pop-up");
-                    alert("prevent link click, did pop-up");
-                    event.preventDefault();
-                }
-                else {
-                    console.log("pop-up didn't work, do nothing, i.e. do redirect login");
-                    alert("pop-up didn't work, do nothing, i.e. do redirect login");
+                // Pop-up possibly blocked, follow link href and do redirect login
+                if (!logInWindowReference)
                     return;
-                }
+                // If the pop-up opened successfully (was not blocked), prevent default link behavior (prevent redirect)
+                event.preventDefault();
                 // add the listener for receiving a message from the pop-up
                 window.addEventListener("message", (event) => this._receiveLoginWindowMessage(event), false);
                 // assign the previous URL
@@ -4581,7 +4575,6 @@ var RethinkID = (function () {
             }
             // if we trust the sender and the source is our pop-up
             if (event.source === logInWindowReference) {
-                alert("about to do _afterLogin in _receiveLoginWindowMessage");
                 this._afterLogin();
             }
         }
@@ -4600,21 +4593,18 @@ var RethinkID = (function () {
                 /**
                  * If completing a redirect login
                  */
-                if (!window.opener) {
-                    console.log("completeLogin: complete redirect login");
-                    alert("completeLogin: complete redirect login");
+                if (!window.opener)
                     return this._afterLogin();
-                }
                 /**
                  * If completing a login pop-up
                  */
                 // Send message to parent/opener window so we know login is complete
                 // Specify `baseUrl` targetOrigin for security
                 window.opener.postMessage("Pop-up login complete", baseUrl); // _afterLogin() called when message received
-                console.log("completeLogin: complete pop-up login. Try close");
-                alert("completeLogin: complete pop-up login. Try close");
                 // close the pop-up, and return focus to the parent window where the `postMessage` we just sent above is received.
                 window.close();
+                console.log("completeLogin: did window.close");
+                alert("completeLogin: did window.close");
             });
         }
         /**
@@ -4624,8 +4614,6 @@ var RethinkID = (function () {
          * 2. Run the user-defined login complete callback
          */
         _afterLogin() {
-            console.log("do _afterLogin");
-            alert("do _afterLogin");
             // Make a socket connection now that we have an access token (and are back in the main window, if pop-up login)
             this._socketConnect();
             // Run the user defined post login callback
