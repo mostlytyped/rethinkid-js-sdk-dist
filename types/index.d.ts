@@ -28,8 +28,10 @@ export default class RethinkID {
      *
      * Use {@link completeLogin} to exchange the authorization code for an access token and ID token
      * at the {@link Options.loginRedirectUri} URI specified when creating a RethinkID instance.
+     *
+     * @param callback After login callback, e.g. set logged in to true in local state. Redirect somewhere...
      */
-    loginUri(): Promise<string>;
+    loginUri(callback?: () => void): Promise<string>;
     /**
      * Opens a pop-up window to perform OAuth login.
      * TODO enhance link with login URI, don't use alone
@@ -46,10 +48,8 @@ export default class RethinkID {
      * Gets the access and ID tokens, establishes an API connection.
      *
      * Must be called at the {@link Options.loginRedirectUri} URI.
-     *
-     * @param completeLoginCallback e.g. set logged in to true in local state
      */
-    completeLogin(completeLoginCallback?: () => void): Promise<void>;
+    completeLogin(): Promise<void>;
     /**
      * Actions to take after login is complete
      *

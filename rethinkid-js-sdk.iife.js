@@ -4349,7 +4349,7 @@ var RethinkID = (function () {
      * e.g. Set state, redirect, etc.
      * TODO // Set `this` context so the RethinkID instance can be accessed a in the callback
      */
-    let onLoginComplete = null;
+    let afterLoginCallback = () => console.log("afterLoginCallback default"); // was null
     /**
      * An app's base URL
      * Used to check against the origin of a postMessage event sent from the log in pop-up window.
@@ -4488,12 +4488,19 @@ var RethinkID = (function () {
          *
          * Use {@link completeLogin} to exchange the authorization code for an access token and ID token
          * at the {@link Options.loginRedirectUri} URI specified when creating a RethinkID instance.
+         *
+         * @param callback After login callback, e.g. set logged in to true in local state. Redirect somewhere...
          */
-        loginUri() {
+        loginUri(callback) {
             return __awaiter(this, void 0, void 0, function* () {
                 // if logging in, do not overwrite existing PKCE local storage values.
                 if (this.isLoggingIn()) {
                     return "";
+                }
+                // Set callback to module-scoped variable so we can call when receiving a login window post message
+                console.log("about to set callback", callback);
+                if (callback) {
+                    afterLoginCallback = callback;
                 }
                 // Create and store a random "state" value
                 const state = generateRandomString();
@@ -4579,17 +4586,13 @@ var RethinkID = (function () {
          * Gets the access and ID tokens, establishes an API connection.
          *
          * Must be called at the {@link Options.loginRedirectUri} URI.
-         *
-         * @param completeLoginCallback e.g. set logged in to true in local state
          */
-        completeLogin(completeLoginCallback) {
+        completeLogin() {
             return __awaiter(this, void 0, void 0, function* () {
                 // Only attempt to complete login if actually logging in.
                 if (!this.isLoggingIn())
                     return;
                 yield this._getAndSetTokens();
-                // Set callback to module-scoped variable so we can call when receiving a login window post message
-                onLoginComplete = completeLoginCallback;
                 /**
                  * If completing a redirect login
                  */
@@ -4615,7 +4618,7 @@ var RethinkID = (function () {
             // Make a socket connection now that we have an access token (and are back in the main window, if pop-up login)
             this._socketConnect();
             // Run the user defined post login callback
-            onLoginComplete.call(this);
+            afterLoginCallback.call(this);
         }
         /**
          * Takes an authorization code and exchanges it for an access token and ID token.
