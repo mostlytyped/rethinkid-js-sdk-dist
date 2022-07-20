@@ -4316,11 +4316,13 @@ var RethinkID = (function () {
      * @param url url to open
      * @param windowName name to identify pop-up window
      * @param win the parent/opener window
-     * @param w width
-     * @param h height
      * @returns `Window` if successful, `null` if blocked by a built-in browser pop-up blocker. Otherwise fails silently I think...
      */
-    function popUpWindow(url, windowName, win, w, h) {
+    function popUpWindow(url, windowName, win) {
+        const w = 3000;
+        const h = 4000;
+        // const w = 500;
+        // const h = 608;
         const y = win.top.outerHeight / 2 + win.top.screenY - h / 2;
         const x = win.top.outerWidth / 2 + win.top.screenX - w / 2;
         return win.open(url, windowName, `popup=yes, width=${w}, height=${h}, top=${y}, left=${x}`);
@@ -4343,13 +4345,13 @@ var RethinkID = (function () {
     let oAuthClient = null;
     let socket = null;
     /**
-     * A callback function an app can specify when opening a pop-up login window.
-     * The callback will run when a user has successfully logged in.
+     * A callback function an app can specify when creating a loginURI.
+     * The callback will run when a user has successfully logged in, either
+     * via redirect or pop-up login
      *
      * e.g. Set state, redirect, etc.
-     * TODO // Set `this` context so the RethinkID instance can be accessed a in the callback
      */
-    let afterLoginCallback = () => console.log("afterLoginCallback default"); // was null
+    let afterLoginCallback = null;
     /**
      * An app's base URL
      * Used to check against the origin of a postMessage event sent from the log in pop-up window.
@@ -4482,9 +4484,11 @@ var RethinkID = (function () {
             });
         }
         /**
-         * Generate a URI to log in a user to RethinkID and authorize an app.
+         * Generate a URI to log in a user to RethinkID and authorize an app, via redirect login.
          * Uses the Authorization Code Flow for single page apps with PKCE code verification.
          * Requests an authorization code.
+         *
+         * Enhance with {@link openLoginPopUp } as a click handler for pop-up login. Falls back to redirect login.
          *
          * Use {@link completeLogin} to exchange the authorization code for an access token and ID token
          * at the {@link Options.loginRedirectUri} URI specified when creating a RethinkID instance.
@@ -4498,7 +4502,6 @@ var RethinkID = (function () {
                     return "";
                 }
                 // Set callback to module-scoped variable so we can call when receiving a login window post message
-                console.log("about to set callback", callback);
                 if (callback) {
                     afterLoginCallback = callback;
                 }
@@ -4521,7 +4524,11 @@ var RethinkID = (function () {
         }
         /**
          * Opens a pop-up window to perform OAuth login.
-         * TODO enhance link with login URI, don't use alone
+         * Can add as a click handler to a login link, `<a>` tag to attempt pop-up login.
+         * Will fallback to just following the link if pop-up is blocked by in-built browser blocker
+         * If blocked by extension, still untested...
+         *
+         * Always use as enhancement to login link, not just a a button click handler because of pop-up unreliability.
          */
         openLoginPopUp(url, event) {
             return __awaiter(this, void 0, void 0, function* () {
@@ -4532,14 +4539,14 @@ var RethinkID = (function () {
                     /**
                      * if the pointer to the window object in memory does not exist or if such pointer exists but the window was closed
                      * */
-                    logInWindowReference = popUpWindow(url, windowName, window, 500, 608);
+                    logInWindowReference = popUpWindow(url, windowName, window);
                 }
                 else if (logInWindowPreviousUrl !== url) {
                     /**
                      * if the resource to load is different, then we load it in the already opened secondary
                      * window and then we bring such window back on top/in front of its parent window.
                      */
-                    logInWindowReference = popUpWindow(url, windowName, window, 500, 608);
+                    logInWindowReference = popUpWindow(url, windowName, window);
                     logInWindowReference.focus();
                 }
                 else {
@@ -4583,6 +4590,8 @@ var RethinkID = (function () {
          * Gets the access and ID tokens, establishes an API connection.
          *
          * Must be called at the {@link Options.loginRedirectUri} URI.
+         *
+         * @returns pop-up success string in case window.close() fails
          */
         completeLogin() {
             return __awaiter(this, void 0, void 0, function* () {
@@ -4593,8 +4602,10 @@ var RethinkID = (function () {
                 /**
                  * If completing a redirect login
                  */
-                if (!window.opener)
-                    return this._afterLogin();
+                if (!window.opener) {
+                    this._afterLogin();
+                    return "";
+                }
                 /**
                  * If completing a login pop-up
                  */
@@ -4603,8 +4614,10 @@ var RethinkID = (function () {
                 window.opener.postMessage("Pop-up login complete", baseUrl); // _afterLogin() called when message received
                 // close the pop-up, and return focus to the parent window where the `postMessage` we just sent above is received.
                 window.close();
-                console.log("completeLogin: did window.close");
-                alert("completeLogin: did window.close");
+                // Send success message in case window fails to close,
+                // e.g. On Brave iOS the tab  does not seem to close,
+                // so at least an app has some way of gracefully handling this case.
+                return "Login successful. This tab can now be closed";
             });
         }
         /**

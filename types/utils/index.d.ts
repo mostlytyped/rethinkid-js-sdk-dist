@@ -12,8 +12,6 @@ export declare function pkceChallengeFromVerifier(codeVerifier: string): Promise
  * @param url url to open
  * @param windowName name to identify pop-up window
  * @param win the parent/opener window
- * @param w width
- * @param h height
  * @returns `Window` if successful, `null` if blocked by a built-in browser pop-up blocker. Otherwise fails silently I think...
  */
-export declare function popUpWindow(url: string, windowName: string, win: Window, w: number, h: number): Window | null;
+export declare function popUpWindow(url: string, windowName: string, win: Window): Window | null;

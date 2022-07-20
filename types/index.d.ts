@@ -22,9 +22,11 @@ export default class RethinkID {
      */
     private _socketConnect;
     /**
-     * Generate a URI to log in a user to RethinkID and authorize an app.
+     * Generate a URI to log in a user to RethinkID and authorize an app, via redirect login.
      * Uses the Authorization Code Flow for single page apps with PKCE code verification.
      * Requests an authorization code.
+     *
+     * Enhance with {@link openLoginPopUp } as a click handler for pop-up login. Falls back to redirect login.
      *
      * Use {@link completeLogin} to exchange the authorization code for an access token and ID token
      * at the {@link Options.loginRedirectUri} URI specified when creating a RethinkID instance.
@@ -34,7 +36,11 @@ export default class RethinkID {
     loginUri(callback?: () => void): Promise<string>;
     /**
      * Opens a pop-up window to perform OAuth login.
-     * TODO enhance link with login URI, don't use alone
+     * Can add as a click handler to a login link, `<a>` tag to attempt pop-up login.
+     * Will fallback to just following the link if pop-up is blocked by in-built browser blocker
+     * If blocked by extension, still untested...
+     *
+     * Always use as enhancement to login link, not just a a button click handler because of pop-up unreliability.
      */
     openLoginPopUp(url: string, event: Event): Promise<void>;
     /**
@@ -48,8 +54,10 @@ export default class RethinkID {
      * Gets the access and ID tokens, establishes an API connection.
      *
      * Must be called at the {@link Options.loginRedirectUri} URI.
+     *
+     * @returns pop-up success string in case window.close() fails
      */
-    completeLogin(): Promise<void>;
+    completeLogin(): Promise<string>;
     /**
      * Actions to take after login is complete
      *
