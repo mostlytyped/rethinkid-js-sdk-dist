@@ -4347,8 +4347,9 @@ var RethinkID = (function () {
      * The callback will run when a user has successfully logged in.
      *
      * e.g. Set state, redirect, etc.
+     * TODO // Set `this` context so the RethinkID instance can be accessed a in the callback
      */
-    let onPopUpLoginComplete = null;
+    let onLoginComplete = null;
     /**
      * An app's base URL
      * Used to check against the origin of a postMessage event sent from the log in pop-up window.
@@ -4513,13 +4514,11 @@ var RethinkID = (function () {
         }
         /**
          * Opens a pop-up window to perform OAuth login.
-         * @param loginCompleteCallback e.g. set logged in to true in local state
+         * TODO enhance link with login URI, don't use alone
          */
-        openLoginPopUp(loginCompleteCallback) {
+        openLoginPopUp(url, event) {
             return __awaiter(this, void 0, void 0, function* () {
-                const url = yield this.loginUri();
                 const windowName = "rethinkid-login-window";
-                onPopUpLoginComplete = loginCompleteCallback;
                 // remove any existing event listeners
                 window.removeEventListener("message", this._receiveLoginWindowMessage);
                 if (logInWindowReference === null || logInWindowReference.closed) {
@@ -4527,18 +4526,6 @@ var RethinkID = (function () {
                      * if the pointer to the window object in memory does not exist or if such pointer exists but the window was closed
                      * */
                     logInWindowReference = popUpWindow(url, windowName, window, 500, 608);
-                    // TODO if `null` pop-up blocked probably!
-                    console.log("A. just tried to window.open", logInWindowReference);
-                    if (logInWindowReference === null) {
-                        const m = "A. - null on trying to open window. Blocked by browser likely.";
-                        console.log(m);
-                        window.prompt(m);
-                    }
-                    else {
-                        const m = "A. - NOT null on trying to open window. Blocked by browser likely.";
-                        console.log(m);
-                        window.prompt(m);
-                    }
                 }
                 else if (logInWindowPreviousUrl !== url) {
                     /**
@@ -4547,18 +4534,6 @@ var RethinkID = (function () {
                      */
                     logInWindowReference = popUpWindow(url, windowName, window, 500, 608);
                     logInWindowReference.focus();
-                    // TODO if `null` pop-up blocked probably!
-                    console.log("B. just tried to window.open", logInWindowReference);
-                    if (logInWindowReference === null) {
-                        const m = "B. - null on trying to open window. Blocked by browser likely.";
-                        console.log(m);
-                        window.prompt(m);
-                    }
-                    else {
-                        const m = "B. - NOT null on trying to open window. Blocked by browser likely.";
-                        console.log(m);
-                        window.prompt(m);
-                    }
                 }
                 else {
                     /**
@@ -4568,31 +4543,18 @@ var RethinkID = (function () {
                      */
                     logInWindowReference.focus();
                 }
+                // If the pop-up opened successfully (was not blocked), prevent default link behavior (prevent redirect)
+                if (logInWindowReference) {
+                    console.log("prevent link click, did pop-up");
+                    event.preventDefault();
+                }
+                else {
+                    console.log("pop-up didn't work, do nothing, i.e. do redirect login");
+                }
                 // add the listener for receiving a message from the pop-up
                 window.addEventListener("message", (event) => this._receiveLoginWindowMessage(event), false);
                 // assign the previous URL
                 logInWindowPreviousUrl = url;
-            });
-        }
-        /**
-         * Completes the pop-up login flow. Sends a message to the opener window, and
-         * closes the pop-up window.
-         * Runs in the log in pop-up window at the login redirect URI, options.logInRedirectUri.
-         */
-        completePopUpLogin() {
-            return __awaiter(this, void 0, void 0, function* () {
-                if (window.opener) {
-                    try {
-                        yield this._getAndSetTokens();
-                    }
-                    catch (e) {
-                        console.log("Complete pop-up login error", e.message);
-                    }
-                    // Specify `baseUrl` targetOrigin for security
-                    window.opener.postMessage("Login complete", baseUrl);
-                    // close the pop-up
-                    window.close();
-                }
             });
         }
         /**
@@ -4609,13 +4571,7 @@ var RethinkID = (function () {
             }
             // if we trust the sender and the source is our pop-up
             if (event.source === logInWindowReference) {
-                // Make a socket connection now that we have an access token and are back in the main window
-                this._socketConnect();
-                // Run the user defined post login callback
-                // Set `this` context so the RethinkID instance can be accessed a in the callback
-                // e.g. calling `this.logOut()` might be useful.
-                onPopUpLoginComplete.call(this);
-                // Have different URL for pop-ups. When that's used, set callback somewhere.
+                this._afterLogin();
             }
         }
         /**
@@ -4623,13 +4579,43 @@ var RethinkID = (function () {
          * Gets the access and ID tokens, establishes an API connection.
          *
          * Must be called at the {@link Options.loginRedirectUri} URI.
+         *
+         * @param completeLoginCallback e.g. set logged in to true in local state
          */
-        completeLogin() {
+        completeLogin(completeLoginCallback) {
             return __awaiter(this, void 0, void 0, function* () {
+                // Only attempt to complete login if actually logging in.
+                if (!this.isLoggingIn())
+                    return;
                 yield this._getAndSetTokens();
-                // Make a socket connection now that we have an access token
-                this._socketConnect();
+                // Set callback to module-scoped variable so we can call when receiving a login window post message
+                onLoginComplete = completeLoginCallback;
+                /**
+                 * If completing a redirect login
+                 */
+                if (!window.opener)
+                    return this._afterLogin();
+                /**
+                 * If completing a login pop-up
+                 */
+                // Send message to parent/opener window so we know login is complete
+                // Specify `baseUrl` targetOrigin for security
+                window.opener.postMessage("Pop-up login complete", baseUrl); // _afterLogin() called when message received
+                // close the pop-up, and return focus to the parent window where the `postMessage` we just sent above is received.
+                window.close();
             });
+        }
+        /**
+         * Actions to take after login is complete
+         *
+         * 1. Establish a socket connection
+         * 2. Run the user-defined login complete callback
+         */
+        _afterLogin() {
+            // Make a socket connection now that we have an access token (and are back in the main window, if pop-up login)
+            this._socketConnect();
+            // Run the user defined post login callback
+            onLoginComplete.call(this);
         }
         /**
          * Takes an authorization code and exchanges it for an access token and ID token.
