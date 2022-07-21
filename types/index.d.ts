@@ -35,8 +35,8 @@ export default class RethinkID {
      * Will fallback to redirect login if pop-up fails to open, provided options type is not `popup` (meaning an app has explicitly opted out of fallback redirect login)
      */
     login(options?: {
-        type: LoginType;
-        callback: () => void;
+        type?: LoginType;
+        callback?: () => void;
     }): Promise<void>;
     /**
      * A "message" event listener for the login pop-up window.
@@ -53,13 +53,6 @@ export default class RethinkID {
      * @returns pop-up success string in case `window.close()` fails
      */
     completeLogin(): Promise<string>;
-    /**
-     * Actions to take after login is complete
-     *
-     * 1. Establish a socket connection
-     * 2. Run the user-defined login complete callback
-     */
-    private _afterLogin;
     /**
      * Takes an authorization code and exchanges it for an access token and ID token.
      * Used in {@link completeLogin}.

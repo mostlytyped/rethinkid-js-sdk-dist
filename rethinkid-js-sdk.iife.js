@@ -4344,8 +4344,7 @@ var RethinkID = (function () {
     let socket = null;
     /**
      * A callback function an app can specify when creating a loginURI.
-     * The callback will run when a user has successfully logged in, either
-     * via redirect or pop-up login
+     * The callback will run when a user has successfully logged in via pop-up login.
      *
      * e.g. Set state, redirect, etc.
      */
@@ -4586,7 +4585,10 @@ var RethinkID = (function () {
             }
             // if we trust the sender and the source is our pop-up
             if (event.source === loginWindowReference) {
-                this._afterLogin();
+                // Make a socket connection now that we have an access token (and are back in the main window, if pop-up login)
+                this._socketConnect();
+                // Run the user defined post login callback
+                afterLoginCallback.call(this);
             }
         }
         /**
@@ -4607,8 +4609,10 @@ var RethinkID = (function () {
                  * If completing a redirect login
                  */
                 if (!window.opener) {
-                    this._afterLogin();
-                    return "";
+                    this._socketConnect();
+                    // Cannot call afterLoginCallback on redirect. It would need to be defined again in completeLogin.
+                    // Instead, check completeLogin response
+                    return "redirect";
                 }
                 /**
                  * If completing a login pop-up
@@ -4621,20 +4625,8 @@ var RethinkID = (function () {
                 // Send success message in case window fails to close,
                 // e.g. On Brave iOS the tab  does not seem to close,
                 // so at least an app has some way of gracefully handling this case.
-                return "Login successful. This tab can now be closed";
+                return "popup";
             });
-        }
-        /**
-         * Actions to take after login is complete
-         *
-         * 1. Establish a socket connection
-         * 2. Run the user-defined login complete callback
-         */
-        _afterLogin() {
-            // Make a socket connection now that we have an access token (and are back in the main window, if pop-up login)
-            this._socketConnect();
-            // Run the user defined post login callback
-            afterLoginCallback.call(this);
         }
         /**
          * Takes an authorization code and exchanges it for an access token and ID token.
