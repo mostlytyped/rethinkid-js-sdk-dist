@@ -4318,7 +4318,7 @@ var RethinkID = (function () {
      * @param win the parent/opener window
      * @returns `Window` if successful, `null` if blocked by a built-in browser pop-up blocker. Otherwise fails silently I think...
      */
-    function popUpWindow(url, windowName, win) {
+    function popupWindow(url, windowName, win) {
         const w = 500;
         const h = 608;
         const y = win.top.outerHeight / 2 + win.top.screenY - h / 2;
@@ -4359,15 +4359,15 @@ var RethinkID = (function () {
     // End constructor vars
     /**
      * A reference to the window object of the log in pop-up window.
-     * Used in {@link RethinkID.openLogInPopUp}
+     * Used in {@link RethinkID.openLoginPopup}
      */
-    let logInWindowReference = null;
+    let loginWindowReference = null;
     /**
      * A reference to the previous URL of the sign up pop-up window.
      * Used to avoid creating duplicate windows and for focusing an existing window.
-     * Used in {@link RethinkID.openLogInPopUp}
+     * Used in {@link RethinkID.openLoginPopup}
      */
-    let logInWindowPreviousUrl = null;
+    let loginWindowPreviousUrl = null;
     /**
      * The primary class of the RethinkID JS SDK to help you more easily build web apps with RethinkID.
      *
@@ -4482,26 +4482,18 @@ var RethinkID = (function () {
             });
         }
         /**
-         * Generate a URI to log in a user to RethinkID and authorize an app, via redirect login.
+         * Generate a URI to log in a user to RethinkID and authorize an app.
          * Uses the Authorization Code Flow for single page apps with PKCE code verification.
          * Requests an authorization code.
          *
-         * Enhance with {@link openLoginPopUp } as a click handler for pop-up login. Falls back to redirect login.
-         *
          * Use {@link completeLogin} to exchange the authorization code for an access token and ID token
          * at the {@link Options.loginRedirectUri} URI specified when creating a RethinkID instance.
-         *
-         * @param callback After login callback, e.g. set logged in to true in local state. Redirect somewhere...
          */
-        loginUri(callback) {
+        loginUri() {
             return __awaiter(this, void 0, void 0, function* () {
                 // if logging in, do not overwrite existing PKCE local storage values.
                 if (this.isLoggingIn()) {
                     return "";
-                }
-                // Set callback to module-scoped variable so we can call when receiving a login window post message
-                if (callback) {
-                    afterLoginCallback = callback;
                 }
                 // Create and store a random "state" value
                 const state = generateRandomString();
@@ -4522,30 +4514,37 @@ var RethinkID = (function () {
         }
         /**
          * Opens a pop-up window to perform OAuth login.
-         * Can add as a click handler to a login link, `<a>` tag to attempt pop-up login.
-         * Will fallback to just following the link if pop-up is blocked by in-built browser blocker
-         * If blocked by extension, still untested...
-         *
-         * Always use as enhancement to login link, not just a a button click handler because of pop-up unreliability.
+         * Will fallback to redirect login if pop-up fails to open, provided options type is not `popup` (meaning an app has explicitly opted out of fallback redirect login)
          */
-        openLoginPopUp(url, event) {
+        login(options) {
             return __awaiter(this, void 0, void 0, function* () {
+                const loginType = options.type || "popup_fallback";
+                const url = yield this.loginUri();
+                // App explicitly requested redirect login, so redirect
+                if (loginType === "redirect") {
+                    window.location.href = url;
+                    return;
+                }
                 const windowName = "rethinkid-login-window";
+                // Set callback to module-scoped variable so we can call when receiving a login window post message
+                if (options.callback) {
+                    afterLoginCallback = options.callback;
+                }
                 // remove any existing event listeners
                 window.removeEventListener("message", this._receiveLoginWindowMessage);
-                if (logInWindowReference === null || logInWindowReference.closed) {
+                if (loginWindowReference === null || loginWindowReference.closed) {
                     /**
                      * if the pointer to the window object in memory does not exist or if such pointer exists but the window was closed
                      * */
-                    logInWindowReference = popUpWindow(url, windowName, window);
+                    loginWindowReference = popupWindow(url, windowName, window);
                 }
-                else if (logInWindowPreviousUrl !== url) {
+                else if (loginWindowPreviousUrl !== url) {
                     /**
                      * if the resource to load is different, then we load it in the already opened secondary
                      * window and then we bring such window back on top/in front of its parent window.
                      */
-                    logInWindowReference = popUpWindow(url, windowName, window);
-                    logInWindowReference.focus();
+                    loginWindowReference = popupWindow(url, windowName, window);
+                    loginWindowReference.focus();
                 }
                 else {
                     /**
@@ -4553,17 +4552,24 @@ var RethinkID = (function () {
                      * we can bring it back on top of any other window with the focus() method.
                      * There would be no need to re-create the window or to reload the referenced resource.
                      */
-                    logInWindowReference.focus();
+                    loginWindowReference.focus();
                 }
-                // Pop-up possibly blocked, follow link href and do redirect login
-                if (!logInWindowReference)
-                    return;
-                // If the pop-up opened successfully (was not blocked), prevent default link behavior (prevent redirect)
-                event.preventDefault();
+                // Pop-up possibly blocked
+                if (!loginWindowReference) {
+                    if (loginType === "popup") {
+                        // app explicitly does not want to fallback to redirect
+                        throw new Error("Pop-up failed to open");
+                    }
+                    else {
+                        // fallback to redirect login
+                        window.location.href = url;
+                        return;
+                    }
+                }
                 // add the listener for receiving a message from the pop-up
                 window.addEventListener("message", (event) => this._receiveLoginWindowMessage(event), false);
                 // assign the previous URL
-                logInWindowPreviousUrl = url;
+                loginWindowPreviousUrl = url;
             });
         }
         /**
@@ -4579,7 +4585,7 @@ var RethinkID = (function () {
                 return;
             }
             // if we trust the sender and the source is our pop-up
-            if (event.source === logInWindowReference) {
+            if (event.source === loginWindowReference) {
                 this._afterLogin();
             }
         }
@@ -4589,7 +4595,7 @@ var RethinkID = (function () {
          *
          * Must be called at the {@link Options.loginRedirectUri} URI.
          *
-         * @returns pop-up success string in case window.close() fails
+         * @returns pop-up success string in case `window.close()` fails
          */
         completeLogin() {
             return __awaiter(this, void 0, void 0, function* () {

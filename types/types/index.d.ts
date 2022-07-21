@@ -21,6 +21,7 @@ export declare type Permission = {
     type: PermissionType;
 };
 export declare type PermissionType = "read" | "insert" | "update" | "delete";
+export declare type LoginType = "popup_fallback" | "popup" | "redirect";
 export declare type IdTokenDecoded = {
     at_hash: string;
     aud: string[];

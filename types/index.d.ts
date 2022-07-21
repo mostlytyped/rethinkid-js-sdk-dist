@@ -1,5 +1,5 @@
 import { Table } from "./table";
-import { Options, Permission, SubscribeListener, MessageOrError } from "./types";
+import { Options, Permission, SubscribeListener, MessageOrError, LoginType } from "./types";
 /**
  * The primary class of the RethinkID JS SDK to help you more easily build web apps with RethinkID.
  *
@@ -22,27 +22,22 @@ export default class RethinkID {
      */
     private _socketConnect;
     /**
-     * Generate a URI to log in a user to RethinkID and authorize an app, via redirect login.
+     * Generate a URI to log in a user to RethinkID and authorize an app.
      * Uses the Authorization Code Flow for single page apps with PKCE code verification.
      * Requests an authorization code.
      *
-     * Enhance with {@link openLoginPopUp } as a click handler for pop-up login. Falls back to redirect login.
-     *
      * Use {@link completeLogin} to exchange the authorization code for an access token and ID token
      * at the {@link Options.loginRedirectUri} URI specified when creating a RethinkID instance.
-     *
-     * @param callback After login callback, e.g. set logged in to true in local state. Redirect somewhere...
      */
-    loginUri(callback?: () => void): Promise<string>;
+    loginUri(): Promise<string>;
     /**
      * Opens a pop-up window to perform OAuth login.
-     * Can add as a click handler to a login link, `<a>` tag to attempt pop-up login.
-     * Will fallback to just following the link if pop-up is blocked by in-built browser blocker
-     * If blocked by extension, still untested...
-     *
-     * Always use as enhancement to login link, not just a a button click handler because of pop-up unreliability.
+     * Will fallback to redirect login if pop-up fails to open, provided options type is not `popup` (meaning an app has explicitly opted out of fallback redirect login)
      */
-    openLoginPopUp(url: string, event: Event): Promise<void>;
+    login(options?: {
+        type: LoginType;
+        callback: () => void;
+    }): Promise<void>;
     /**
      * A "message" event listener for the login pop-up window.
      * Handles messages sent from the login pop-up window to its opener window.
@@ -55,7 +50,7 @@ export default class RethinkID {
      *
      * Must be called at the {@link Options.loginRedirectUri} URI.
      *
-     * @returns pop-up success string in case window.close() fails
+     * @returns pop-up success string in case `window.close()` fails
      */
     completeLogin(): Promise<string>;
     /**
